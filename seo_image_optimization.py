@@ -1,28 +1,39 @@
 import os
 import sys
 import threading
-import shutil
+import subprocess
 import webbrowser
-from datetime import datetime
+
 
 # Lista de dependências necessárias
-REQUIRED_LIBS = ["flet", "Pillow"]
+dependencias = ["flet", "pillow"]
 
-# Função para verificar e instalar dependências ausentes
-def check_and_install_dependencies():
-    missing_libs = []
-    for lib in REQUIRED_LIBS:
-        try:
-            __import__(lib)
-        except ImportError:
-            missing_libs.append(lib)
-    
-    if missing_libs:
-        print(f"🔧 Instalando dependências ausentes: {', '.join(missing_libs)}...")
-        os.system(f"{sys.executable} -m pip install {' '.join(missing_libs)}")
+def verificar_instalacao(biblioteca):
+    """Verifica se a biblioteca está instalada usando pip show"""
+    try:
+        resultado = subprocess.run(
+            [sys.executable, "-m", "pip", "show", biblioteca],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return bool(resultado.stdout)
+    except Exception:
+        return False
 
-# Executa a verificação antes de iniciar o programa
-check_and_install_dependencies()
+def instalar_dependencias():
+    """Instala apenas as bibliotecas que ainda não estão instaladas"""
+    bibliotecas_faltando = [lib for lib in dependencias if not verificar_instalacao(lib)]
+    if not bibliotecas_faltando:
+        print("\n✅ Todas as dependências já estão instaladas.")
+        return
+
+    print(f"\n📦 Instalando: {', '.join(bibliotecas_faltando)}...")
+    subprocess.run([sys.executable, "-m", "pip", "install", *bibliotecas_faltando], check=True)
+    print("\n✅ Instalação concluída!")
+
+# Verificar e instalar dependências antes de rodar o script
+instalar_dependencias()
 
 import flet as ft
 from PIL import Image
@@ -76,7 +87,7 @@ def main(page: ft.Page):
     page.title = "CompImage - Compressor de Imagens Offline"
     page.padding = 20
     page.spacing = 20
-    page.theme_mode = "light"
+
 
     # Componentes da interface
     global output_folder, input_folder
@@ -168,7 +179,7 @@ def main(page: ft.Page):
                 
                 progress_percentage = (index / len(images)) * 100
                 progress_bar.value = progress_percentage / 100
-                progress_text.value = f"Progresso: {int(progress_percentage)}%"
+                progress_text.value = f"{int(progress_percentage)}%"
                 page.update()
             
             progress_bar.visible = False
@@ -179,15 +190,35 @@ def main(page: ft.Page):
             page.update()
         
         threading.Thread(target=process_images).start()
+    def on_hover(e):
+        e.control.bgcolor = "blue" if e.data == "true" else "black"
+        e.control.update()
     
+    def toggle_theme(e):
+        if page.theme_mode == ft.ThemeMode.LIGHT:
+            page.theme_mode = ft.ThemeMode.DARK
+            theme_button.text = "🌑"
+        else:
+            page.theme_mode = ft.ThemeMode.LIGHT
+            theme_button.text = "☀️"
+        page.update()
+
+    # Button to toggle theme
+    theme_button = ft.ElevatedButton(
+        text="☀️  " if page.theme_mode == ft.ThemeMode.LIGHT else "🌑",
+        on_click=toggle_theme
+    )
+
+   
     page.add(
         ft.Text("💡 CompImage - Compressor de Imagens Offline", size=24, weight="bold"),
         ft.Row([input_folder, output_folder], spacing=20),
         ft.Row([name_prefix, company_name, max_size_dropdown, output_format, quality_level], spacing=20),
-        numbering_toggle,
-        ft.Row([ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression, bgcolor="black", color="white")], alignment="center"),
+        numbering_toggle,theme_button,
+        ft.Row([ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression, bgcolor="black", color="white", on_hover=on_hover)], alignment="center"),
+        
         ft.Row([progress_bar], alignment="center"),
-        progress_text,
+        ft.Row([progress_text], alignment="center"),
         success_text,
         open_folder_button,
         log_text
