@@ -1,43 +1,44 @@
 
 ```markdown
-# 🖼️ CompImage - Compressor de Imagens Offline
 
-**CompImage** é uma aplicação de interface gráfica feita com [Flet](https://flet.dev) que permite **comprimir, redimensionar e renomear imagens em massa**, de forma simples, rápida e totalmente **offline**.
+# CompImage - Compressor de Imagens Offline
 
-Ideal para quem trabalha com marketing, e-commerce, blogs ou redes sociais e precisa otimizar imagens para melhorar o desempenho e SEO sem perder qualidade.
+**CompImage** é uma aplicação de interface gráfica feita com [Flet](https://flet.dev/)
 
----
-
-## 🚀 Funcionalidades
-
-- 📁 Seleção da pasta de entrada e saída  
-- 🔤 Renomeia imagens com prefixo personalizado e nome da empresa (útil para SEO)  
-- 🔢 Opção de numeração automática nos arquivos  
-- 📏 Redimensionamento inteligente mantendo proporção  
-- 🎚️ Escolha da qualidade (de 40% até 100%)  
-- 📷 Suporte aos formatos `jpg`, `jpeg`, `png`, `webp`  
-- 🧠 Interface simples e intuitiva com barra de progresso  
-- ✅ Totalmente offline  
+Ideal para quem trabalha com marketing, e-commerce, blogs ou redes sociais
 
 ---
 
-## 🛠️ Tecnologias utilizadas
+## 🛠 Funcionalidades
 
-- [Python 3](https://www.python.org/)  
-- [Flet](https://flet.dev/) – Para a interface gráfica  
-- [Pillow (PIL)](https://python-pillow.org/) – Para manipulação das imagens  
-- `threading`, `os`, `subprocess`, `webbrowser` – Módulos padrão do Python  
+- 🗂 Seleção da pasta de entrada e saída
+- 🖼️ Renomeia imagens com prefixo personalizado e nome da empresa (útil para branding)
+- 🔢 Opção de numeração automática nos arquivos
+- 🔄 Redimensionamento inteligente mantendo proporção
+- ⚙️ Escolha da qualidade (de 40% até 100%)
+- 📸 Suporte aos formatos `jpg`, `jpeg`, `png`, `webp`
+- 🔋 Interface simples e intuitiva com barra de progresso
+- 💻 Totalmente offline
 
 ---
 
-## 📦 Instalação
+## 🧰 Tecnologias utilizadas
+
+- [Python 3](https://www.python.org/) - Linguagem de programação
+- [Flet](https://flet.dev/) - Para a interface gráfica
+- [Pillow (PIL)](https://python-pillow.org/) - Para manipulação das imagens
+- `threading`, `os`, `subprocess`, `webbrowser` - Módulos padrão do Python
+
+---
+
+## 🛠️ Instalação
 
 1. **Clone o repositório:**
 
 ```bash
 git clone https://github.com/reis071/compImage.git
-cd compimage
-```
+cd compImage
+
 
 2. **Crie e ative um ambiente virtual (opcional, mas recomendado):**
 
