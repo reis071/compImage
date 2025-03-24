@@ -68,11 +68,13 @@ apenas apertando o botão de executar da sua IDE
 
 ## 📁 Estrutura da aplicação
 
+
 compimage/
 │
 ├── main.py                # Código principal do app
 ├── requirements.txt       # Dependências do projeto
 ├── README.md              # Este arquivo
+
 ---
 
 ## 💡 Sugestões de uso
