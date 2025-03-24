@@ -196,10 +196,10 @@ def main(page: ft.Page):
         ft.Row([input_folder, output_folder], spacing=20),
         ft.Row([name_prefix, company_name, max_size_dropdown, output_format, quality_level], spacing=20),
         numbering_toggle,
-        ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression),
-        progress_bar,
-        progress_text,
-        success_text,
+        ft.Row([ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression)],alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([progress_bar], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([progress_text], alignment=ft.MainAxisAlignment.CENTER),
+        ft.Row([success_text], alignment=ft.MainAxisAlignment.CENTER),
         open_folder_button,
         log_text
     )
