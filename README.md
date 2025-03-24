@@ -1,107 +1,89 @@
+# 🖼️ CompImage - Compressor de Imagens Offline
 
-```markdown
+**CompImage** é uma aplicação de interface gráfica feita com [Flet](https://flet.dev) que permite **comprimir, redimensionar e renomear imagens em massa**, de forma simples, rápida e totalmente **offline**.
 
-# CompImage - Compressor de Imagens Offline
-
-**CompImage** é uma aplicação de interface gráfica feita com [Flet](https://flet.dev/)
-
-Ideal para quem trabalha com marketing, e-commerce, blogs ou redes sociais
+Ideal para quem trabalha com marketing, e-commerce, blogs ou redes sociais e precisa otimizar imagens para melhorar o desempenho e SEO sem perder qualidade.
 
 ---
 
-## 🛠 Funcionalidades
+## 🚀 Funcionalidades
 
-- 🗂 Seleção da pasta de entrada e saída
-- 🖼️ Renomeia imagens com prefixo personalizado e nome da empresa (útil para branding)
+- 📁 Seleção da pasta de entrada e saída
+- 🔤 Renomeia imagens com prefixo personalizado e nome da empresa (útil para SEO)
 - 🔢 Opção de numeração automática nos arquivos
-- 🔄 Redimensionamento inteligente mantendo proporção
-- ⚙️ Escolha da qualidade (de 40% até 100%)
-- 📸 Suporte aos formatos `jpg`, `jpeg`, `png`, `webp`
-- 🔋 Interface simples e intuitiva com barra de progresso
-- 💻 Totalmente offline
+- 📏 Redimensionamento inteligente mantendo proporção
+- 🎚️ Escolha da qualidade (de 40% até 100%)
+- 📷 Suporte aos formatos `jpg`, `jpeg`, `png`, `webp`
+- 🧠 Interface simples e intuitiva com barra de progresso
+- ✅ Totalmente offline
 
 ---
 
-## 🧰 Tecnologias utilizadas
+## 🛠️ Tecnologias utilizadas
 
-- [Python 3](https://www.python.org/) - Linguagem de programação
-- [Flet](https://flet.dev/) - Para a interface gráfica
-- [Pillow (PIL)](https://python-pillow.org/) - Para manipulação das imagens
-- `threading`, `os`, `subprocess`, `webbrowser` - Módulos padrão do Python
+- [Python 3](https://www.python.org/)
+- [Flet](https://flet.dev/) – Para a interface gráfica
+- [Pillow (PIL)](https://python-pillow.org/) – Para manipulação das imagens
+- `threading`, `os`, `subprocess`, `webbrowser` – Módulos padrão do Python
 
 ---
 
-## 🛠️ Instalação
+## 📦 Instalação
 
 1. **Clone o repositório:**
-
-```bash
+bash
 git clone https://github.com/reis071/compImage.git
-cd compImage
-
-
+cd compimage
 2. **Crie e ative um ambiente virtual (opcional, mas recomendado):**
-
-```bash
+bash
 python -m venv venv
 # Windows:
 venv\Scripts\activate
 # Linux/Mac:
 source venv/bin/activate
-```
-
 3. **Instale as dependências:**
 
 O próprio app instala as dependências automaticamente se você rodar direto o `main.py`.
 
 Ou, se preferir instalar manualmente:
-
-```bash
+bash
 pip install -r requirements.txt
-```
-
 ---
 
 ## ▶️ Como usar
 
 Execute o aplicativo com:
-
-```bash
+bash
 python main.py
-```
 
-**OU** apenas apertando o botão de executar da sua IDE.
+OU
 
-1. Escolha a pasta com as imagens que deseja otimizar.  
-2. Defina as opções desejadas: nome base, tamanho, qualidade, formato, etc.  
-3. Clique em **"🚀 INICIAR CONVERSÃO"**.  
+apenas apertando o botão de executar da sua IDE
+1. Escolha a pasta com as imagens que deseja otimizar.
+2. Defina as opções desejadas: nome base, tamanho, qualidade, formato, etc.
+3. Clique em **"🚀 INICIAR CONVERSÃO"**.
 4. Ao final, clique em **"📂 Abrir Pasta"** para visualizar os arquivos otimizados.
 
 ---
 
 ## 📁 Estrutura da aplicação
 
-```
 compimage/
 │
 ├── main.py                # Código principal do app
 ├── requirements.txt       # Dependências do projeto
 ├── README.md              # Este arquivo
-```
-
 ---
 
 ## 💡 Sugestões de uso
 
-- Otimizar imagens de produtos para e-commerce (ex: `camiseta-verde-lojaXYZ.jpg`)  
-- Reduzir o peso de imagens para melhorar a velocidade de sites  
-- Gerar imagens padronizadas para redes sociais (ex: stories ou posts do Instagram)  
+- Otimizar imagens de produtos para e-commerce (ex: `camiseta-verde-lojaXYZ.jpg`)
+- Reduzir o peso de imagens para melhorar a velocidade de sites
+- Gerar imagens padronizadas para redes sociais (ex: stories ou posts do Instagram)
 - Criar miniaturas otimizadas para YouTube, blogs, etc.
 
 ---
 
 ## 🧑‍💻 Autor
 
-Desenvolvido por [Guilherme Reis Correia](https://github.com/reis071)
-```
-
+Desenvolvido por [Guilherme Reis Correia]([http](https://github.com/reis071)
