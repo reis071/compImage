@@ -1,47 +1,39 @@
-import os
-import sys
 import subprocess
+import sys
+
+# Função para verificar e instalar dependências
+def ensure_dependencies(requirements_file="requirements.txt"):
+    try:
+        with open(requirements_file, "r") as file:
+            dependencies = [line.strip() for line in file.readlines() if line.strip()]
+        
+        missing_packages = []
+        for package in dependencies:
+            package_name = package.split("==")[0]  # Obtém apenas o nome do pacote sem a versão
+            try:
+                __import__(package_name)
+            except ImportError:
+                missing_packages.append(package)
+
+        if missing_packages:
+            print(f"📦 Instalando pacotes ausentes: {', '.join(missing_packages)}...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", *missing_packages])
+            print("✅ Todas as dependências foram instaladas com sucesso!")
+
+    except FileNotFoundError:
+        print(f"❌ Arquivo {requirements_file} não encontrado!")
+        sys.exit(1)
+
+# Garantir que as dependências estejam instaladas antes de importar qualquer biblioteca
+ensure_dependencies()
+
+import os
+import threading
+import webbrowser
 import flet as ft
 from PIL import Image
 
-# Lista de dependências necessárias
-dependencias = ["flet", "pillow"]
-
-def verificar_instalacao(biblioteca):
-    """Verifica se a biblioteca está instalada usando pip show"""
-    try:
-        resultado = subprocess.run(
-            [sys.executable, "-m", "pip", "show", biblioteca],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        return bool(resultado.stdout)
-    except Exception:
-        return False
-
-def instalar_dependencias():
-    """Instala apenas as bibliotecas que ainda não estão instaladas"""
-    bibliotecas_faltando = [lib for lib in dependencias if not verificar_instalacao(lib)]
-    if not bibliotecas_faltando:
-        print("\n✅ Todas as dependências já estão instaladas.")
-        return
-
-    print(f"\n📦 Instalando: {', '.join(bibliotecas_faltando)}...")
-    subprocess.run([sys.executable, "-m", "pip", "install", *bibliotecas_faltando], check=True)
-    print("\n✅ Instalação concluída!")
-
-# Verificar e instalar dependências antes de rodar o script
-instalar_dependencias()
-
-# Configuração padrão
-MAX_WIDTH = 1200  # Largura máxima da imagem
-
-# Determina a pasta da Área de Trabalho do usuário
-desktop_folder = os.path.join(os.path.expanduser("~"), "Desktop")  # Windows, macOS e Linux compatível
-DEFAULT_OUTPUT_FOLDER = os.path.join(desktop_folder, "imagens_otimizadas")  # Criará na área de trabalho
-
-# Mapeamento dos níveis de qualidade
+# Configuração padrão de qualidade
 QUALITY_LEVELS = {
     "Altíssima (100%)": 100,
     "Alta (90%)": 90,
@@ -50,132 +42,165 @@ QUALITY_LEVELS = {
     "Muito Baixa (40%)": 40,
 }
 
+# Novos tamanhos disponíveis
+MAX_SIZE_OPTIONS = {
+    "Full HD (1920x1080)": (1920, 1080),
+    "HD (1600x900)": (1600, 900),
+    "Web Padrão (1200x800)": (1200, 800),
+    "Instagram Post (1080x1080)": (1080, 1080),
+    "Stories/Reels (1080x1920)": (1080, 1920),
+    "Miniatura (800x800)": (800, 800),
+    "Thumbnail (600x400)": (600, 400),
+    "Perfil Pequeno (400x400)": (400, 400),
+    "Original": None  # Mantém o tamanho original
+}
+
+
+def sanitize_filename(filename):
+    """Substitui espaços e underscores (_) por hífens (-) no nome do arquivo."""
+    return filename.replace(" ", "-").replace("_", "-")
+
+def format_path(path):
+    """Substitui \ por / no caminho do diretório."""
+    return path.replace("\\", "/")
+
+def open_folder(e):
+    """Abre a pasta de saída no explorador de arquivos."""
+    output_path = format_path(output_folder.value.strip())
+    if not output_path:
+        output_path = f"{format_path(input_folder.value.strip())}-otimizada"
+    webbrowser.open(f"file://{os.path.abspath(output_path)}")
+
+def compress_image(input_path, output_path, quality, format_, max_size):
+    """Redimensiona e comprime a imagem."""
+    try:
+        img = Image.open(input_path)
+        img = img.convert("RGB")
+
+        if max_size is not None:
+            img.thumbnail(max_size)  # Redimensiona mantendo proporção
+        
+        img.save(output_path, format_.upper(), quality=quality)
+        return True
+    except Exception as e:
+        return str(e)
+
 def main(page: ft.Page):
-    page.title = "CompImage "
+    page.title = "CompImage - Compressor de Imagens Offline"
     page.padding = 20
     page.spacing = 20
 
-    # Variáveis para armazenar os diretórios, nome base, formato de saída e qualidade
+    # Componentes da interface
+    global output_folder, input_folder
     input_folder = ft.TextField(label="📁 Pasta de Entrada", hint_text="Digite o caminho da pasta", expand=True)
-    output_folder = ft.TextField(label="📂 Pasta de Saída (Opcional)", hint_text=f"Se não informado, criará {DEFAULT_OUTPUT_FOLDER}", expand=True)
+    output_folder = ft.TextField(label="📂 Pasta de Saída (Opcional)", hint_text="Se não informado, será criada dentro da pasta de entrada", expand=True)
     name_prefix = ft.TextField(label="🔤 Nome base das imagens", hint_text="Ex: produto-xyz", expand=True)
-
-    # Opção de formato de saída
+    company_name = ft.TextField(label="🏢 Nome da Empresa", hint_text="Digite o nome da empresa para SEO", expand=True)
+    numbering_toggle = ft.Switch(label="🔢 Numerar imagens automaticamente", value=False)
+    
+    max_size_dropdown = ft.Dropdown(
+        label="📏 Tamanho Máximo",
+        options=[ft.dropdown.Option(option) for option in MAX_SIZE_OPTIONS.keys()],
+        value="Full HD (1920x1080)", expand=True
+    )
+    
     output_format = ft.Dropdown(
         label="📷 Formato de saída",
-        options=[
-            ft.dropdown.Option("webp"),
-            ft.dropdown.Option("jpg"),
-            ft.dropdown.Option("jpeg"),
-            ft.dropdown.Option("png"),
-        ],
-        value="webp",  # Valor padrão
-        expand=True
+        options=[ft.dropdown.Option(fmt) for fmt in ["webp", "jpg", "jpeg", "png"]],
+        value="webp", expand=True
     )
-
-    # Opção de qualidade
+    
     quality_level = ft.Dropdown(
         label="🎚 Qualidade da imagem",
         options=[ft.dropdown.Option(q) for q in QUALITY_LEVELS.keys()],
-        value="Média (80%)",  # Padrão
-        expand=True
+        value="Média (80%)", expand=True
     )
-
-    # Área de logs
-    log_text = ft.Text(value="📜 Logs da conversão aparecerão aqui...", size=12, selectable=True)
-
-    def otimizar_imagens(e):
-        """Processa as imagens e exibe os logs."""
-        input_path = input_folder.value.strip()
-        output_path = output_folder.value.strip() or DEFAULT_OUTPUT_FOLDER  # Se não passar, usa a pasta da Área de Trabalho
-
-        # Verifica se a pasta de entrada existe
-        if not os.path.exists(input_path):
-            log_text.value = f"❌ A pasta de entrada '{input_path}' não existe. Verifique o caminho."
-            page.update()
-            return
-
-        if not name_prefix.value.strip():
-            log_text.value = "⚠️ Defina um nome base para os arquivos!"
-            page.update()
-            return
-
-        if not output_format.value:
-            log_text.value = "⚠️ Selecione um formato de saída!"
-            page.update()
-            return
-
-        if not quality_level.value:
-            log_text.value = "⚠️ Selecione um nível de qualidade!"
-            page.update()
-            return
-
-        quality = QUALITY_LEVELS[quality_level.value]  # Define a qualidade com base na escolha do usuário
-
-        # Criar pasta de saída se não existir
+    
+    progress_bar = ft.ProgressBar(width=400, height=10, visible=False)
+    progress_text = ft.Text("", size=14, visible=False)
+    log_text = ft.Text(value="", size=12, selectable=True, visible=False)
+    success_text = ft.Text(value="", size=16, weight="bold", color="green", visible=False)
+    open_folder_button = ft.ElevatedButton(text="📂 Abrir Pasta", visible=False, on_click=open_folder)
+    
+    def start_compression(e):
+        input_path = format_path(input_folder.value.strip())
+        output_path = format_path(output_folder.value.strip())
+        
+        if not output_path:
+            output_path = f"{input_path}-otimizada"
+        
         os.makedirs(output_path, exist_ok=True)
-
-        imagens = [f for f in os.listdir(input_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-        if not imagens:
-            log_text.value = "⚠️ Nenhuma imagem encontrada na pasta selecionada!"
+        
+        quality = QUALITY_LEVELS[quality_level.value]
+        format_ = output_format.value
+        max_size = MAX_SIZE_OPTIONS[max_size_dropdown.value]
+        
+        if not os.path.exists(input_path):
+            log_text.value = f"❌ A pasta de entrada '{input_path}' não existe."
+            log_text.visible = True
             page.update()
             return
-
-        log_text.value = f"🔄 Iniciando a conversão para {output_format.value.upper()} com qualidade {quality_level.value}..."
+        
+        images = [
+            os.path.join(root, file)
+            for root, _, files in os.walk(input_path)
+            for file in files if file.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))
+        ]
+        
+        if not images:
+            log_text.value = "⚠️ Nenhuma imagem encontrada na pasta selecionada!"
+            log_text.visible = True
+            page.update()
+            return
+        
+        log_text.visible = False
+        progress_bar.value = 0
+        progress_bar.visible = True
+        progress_text.visible = True
         page.update()
+        
+        # Função para processar as imagens
+        def process_images():
+            for index, input_file in enumerate(images, start=1):
+                filename = os.path.basename(input_file)
+                base_name = name_prefix.value.strip() if name_prefix.value.strip() else os.path.splitext(filename)[0]
+                base_name = sanitize_filename(base_name)
 
-        erros = []
-        for index, filename in enumerate(imagens, start=1):
-            try:
-                img = Image.open(os.path.join(input_path, filename))
-                img.verify()
-                img = Image.open(os.path.join(input_path, filename)).convert("RGB")
+                company = company_name.value.strip()
+                numbering = f"-{index}" if numbering_toggle.value else ""
 
-                # Redimensionamento se necessário
-                if img.width > MAX_WIDTH:
-                    img.thumbnail((MAX_WIDTH, img.height * MAX_WIDTH // img.width))
+                # Formata o nome corretamente sem hífen desnecessário
+                if company:
+                    new_name = f"{base_name}-{company}{numbering}.{format_}"
+                else:
+                    new_name = f"{base_name}{numbering}.{format_}"
 
-                # Criar nome único para a imagem com o formato escolhido
-                new_name = f"{name_prefix.value.strip()}-{index}.{output_format.value}"
                 output_file = os.path.join(output_path, new_name)
 
-                # Salvar imagem no formato escolhido com a qualidade definida
-                img.save(output_file, output_format.value.upper(), quality=quality)
-                log_text.value += f"\n✅ {filename} → {new_name} ({quality_level.value})"
-                page.update()
-            except Exception as err:
-                erros.append(filename)
-                log_text.value += f"\n❌ Erro ao processar {filename}: {err}"
+                compress_image(input_file, output_file, quality, format_, max_size)
+
+                progress_bar.value = index / len(images)
+                progress_text.value = f"{int((index / len(images)) * 100)}%"
                 page.update()
 
-        if erros:
-            log_text.value += f"\n⚠️ {len(erros)} imagens apresentaram erros."
+            progress_bar.visible = False
+            success_text.value = f"✅ Compressão concluída! Arquivos salvos em: {output_path}"
+            success_text.visible = True
+            open_folder_button.visible = True
+            page.update()
+        
+        threading.Thread(target=process_images).start()
 
-        log_text.value += f"\n🚀 Conversão concluída! Arquivos salvos em '{output_path}'."
-        page.update()
-
-    # Botão para iniciar conversão (MAIOR E MAIS ESTILIZADO)
-    btn_iniciar = ft.ElevatedButton(
-        text="🚀 INICIAR CONVERSÃO",
-        on_click=otimizar_imagens,
-        bgcolor=ft.colors.GREEN,
-        color=ft.colors.WHITE,
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=10),  # Borda arredondada
-            padding=20,  # Maior área de clique
-            text_style=ft.TextStyle(size=18, weight="bold")  # Texto maior e negrito
-        ),
-        width=300,  # Largura maior para destacar o botão
-        height=60  # Altura maior para tornar mais visível
-    )
-
-    # Organização do layout
     page.add(
-        ft.Text("💡 Otimizador de Imagens", size=24, weight="bold"),
+        ft.Text("💡 CompImage - Compressor de Imagens Offline", size=24, weight="bold"),
         ft.Row([input_folder, output_folder], spacing=20),
-        ft.Row([name_prefix, output_format, quality_level], spacing=20),
-        ft.Row([btn_iniciar], alignment="center"),
-        ft.Text("📜 Logs:", size=18, weight="bold"),
+        ft.Row([name_prefix, company_name, max_size_dropdown, output_format, quality_level], spacing=20),
+        numbering_toggle,
+        ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression),
+        progress_bar,
+        progress_text,
+        success_text,
+        open_folder_button,
         log_text
     )
 
