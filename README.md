@@ -54,11 +54,12 @@ pip install -r requirements.txt
 
 Execute o aplicativo com:
 
-python main.py
+python seo_image_optimization
 
 OU
 
 apenas apertando o botão de executar da sua IDE
+
 1. Escolha a pasta com as imagens que deseja otimizar.
 2. Defina as opções desejadas: nome base, tamanho, qualidade, formato, etc.
 3. Clique em **"🚀 INICIAR CONVERSÃO"**.
