@@ -35,8 +35,9 @@ bash
 git clone https://github.com/reis071/compImage.git
 cd compimage
 2. **Crie e ative um ambiente virtual (opcional, mas recomendado):**
-bash
+
 python -m venv venv
+
 # Windows:
 venv\Scripts\activate
 # Linux/Mac:
@@ -58,7 +59,7 @@ python seo_image_optimization
 
 OU
 
-apenas apertando o botão de executar da sua IDE
+apenas apertando o botão de executar na sua IDE
 
 1. Escolha a pasta com as imagens que deseja otimizar.
 2. Defina as opções desejadas: nome base, tamanho, qualidade, formato, etc.
