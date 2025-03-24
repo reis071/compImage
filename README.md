@@ -53,7 +53,7 @@ pip install -r requirements.txt
 ## ▶️ Como usar
 
 Execute o aplicativo com:
-bash
+
 python main.py
 
 OU
