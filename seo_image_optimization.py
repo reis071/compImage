@@ -1,46 +1,39 @@
-import os
-import sys
-import threading
 import subprocess
-import webbrowser
+import sys
 
-
-# Lista de dependências necessárias
-dependencias = ["flet", "pillow"]
-
-def verificar_instalacao(biblioteca):
-    """Verifica se a biblioteca está instalada usando pip show"""
+# Função para verificar e instalar dependências
+def ensure_dependencies(requirements_file="requirements.txt"):
     try:
-        resultado = subprocess.run(
-            [sys.executable, "-m", "pip", "show", biblioteca],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        return bool(resultado.stdout)
-    except Exception:
-        return False
+        with open(requirements_file, "r") as file:
+            dependencies = [line.strip() for line in file.readlines() if line.strip()]
+        
+        missing_packages = []
+        for package in dependencies:
+            package_name = package.split("==")[0]  # Obtém apenas o nome do pacote sem a versão
+            try:
+                __import__(package_name)
+            except ImportError:
+                missing_packages.append(package)
 
-def instalar_dependencias():
-    """Instala apenas as bibliotecas que ainda não estão instaladas"""
-    bibliotecas_faltando = [lib for lib in dependencias if not verificar_instalacao(lib)]
-    if not bibliotecas_faltando:
-        print("\n✅ Todas as dependências já estão instaladas.")
-        return
+        if missing_packages:
+            print(f"📦 Instalando pacotes ausentes: {', '.join(missing_packages)}...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", *missing_packages])
+            print("✅ Todas as dependências foram instaladas com sucesso!")
 
-    print(f"\n📦 Instalando: {', '.join(bibliotecas_faltando)}...")
-    subprocess.run([sys.executable, "-m", "pip", "install", *bibliotecas_faltando], check=True)
-    print("\n✅ Instalação concluída!")
+    except FileNotFoundError:
+        print(f"❌ Arquivo {requirements_file} não encontrado!")
+        sys.exit(1)
 
-# Verificar e instalar dependências antes de rodar o script
-instalar_dependencias()
+# Garantir que as dependências estejam instaladas antes de importar qualquer biblioteca
+ensure_dependencies()
 
+import os
+import threading
+import webbrowser
 import flet as ft
 from PIL import Image
 
-# Configuração padrão
-DEFAULT_MAX_WIDTH = 1200  # Largura máxima padrão da imagem
-DEFAULT_MAX_HEIGHT = 1200 # Altura máxima padrão da imagem
+# Configuração padrão de qualidade
 QUALITY_LEVELS = {
     "Altíssima (100%)": 100,
     "Alta (90%)": 90,
@@ -49,13 +42,23 @@ QUALITY_LEVELS = {
     "Muito Baixa (40%)": 40,
 }
 
-MAX_SIZE_OPTIONS = ["800x800", "1200x1200", "1600x1600", "Original"]
+# Novos tamanhos disponíveis
+MAX_SIZE_OPTIONS = {
+    "Full HD (1920x1080)": (1920, 1080),
+    "HD (1600x900)": (1600, 900),
+    "Web Padrão (1200x800)": (1200, 800),
+    "Instagram Post (1080x1080)": (1080, 1080),
+    "Stories/Reels (1080x1920)": (1080, 1920),
+    "Miniatura (800x800)": (800, 800),
+    "Thumbnail (600x400)": (600, 400),
+    "Perfil Pequeno (400x400)": (400, 400),
+    "Original": None  # Mantém o tamanho original
+}
 
-# Funções auxiliares
+
 def sanitize_filename(filename):
-    """Substitui espaços por hífens no nome do arquivo e limita o tamanho para SEO."""
-    sanitized = filename.replace(" ", "-")
-    return sanitized[:50]  # Limita o nome do arquivo a 50 caracteres
+    """Substitui espaços e underscores (_) por hífens (-) no nome do arquivo."""
+    return filename.replace(" ", "-").replace("_", "-")
 
 def format_path(path):
     """Substitui \ por / no caminho do diretório."""
@@ -69,14 +72,13 @@ def open_folder(e):
     webbrowser.open(f"file://{os.path.abspath(output_path)}")
 
 def compress_image(input_path, output_path, quality, format_, max_size):
-    """Compressão de imagens mantendo qualidade e redimensionando."""
+    """Redimensiona e comprime a imagem."""
     try:
         img = Image.open(input_path)
         img = img.convert("RGB")
-        
-        if max_size != "Original":
-            max_width, max_height = map(int, max_size.split("x"))
-            img.thumbnail((max_width, max_height))
+
+        if max_size is not None:
+            img.thumbnail(max_size)  # Redimensiona mantendo proporção
         
         img.save(output_path, format_.upper(), quality=quality)
         return True
@@ -88,7 +90,6 @@ def main(page: ft.Page):
     page.padding = 20
     page.spacing = 20
 
-
     # Componentes da interface
     global output_folder, input_folder
     input_folder = ft.TextField(label="📁 Pasta de Entrada", hint_text="Digite o caminho da pasta", expand=True)
@@ -98,19 +99,14 @@ def main(page: ft.Page):
     numbering_toggle = ft.Switch(label="🔢 Numerar imagens automaticamente", value=False)
     
     max_size_dropdown = ft.Dropdown(
-        label="📏 Tamanho Máximo (Largura x Altura)",
-        options=[ft.dropdown.Option(option) for option in MAX_SIZE_OPTIONS],
-        value="1200x1200", expand=True
+        label="📏 Tamanho Máximo",
+        options=[ft.dropdown.Option(option) for option in MAX_SIZE_OPTIONS.keys()],
+        value="Full HD (1920x1080)", expand=True
     )
     
     output_format = ft.Dropdown(
         label="📷 Formato de saída",
-        options=[
-            ft.dropdown.Option("webp"),
-            ft.dropdown.Option("jpg"),
-            ft.dropdown.Option("jpeg"),
-            ft.dropdown.Option("png"),
-        ],
+        options=[ft.dropdown.Option(fmt) for fmt in ["webp", "jpg", "jpeg", "png"]],
         value="webp", expand=True
     )
     
@@ -137,10 +133,10 @@ def main(page: ft.Page):
         
         quality = QUALITY_LEVELS[quality_level.value]
         format_ = output_format.value
-        max_size = max_size_dropdown.value
+        max_size = MAX_SIZE_OPTIONS[max_size_dropdown.value]
         
         if not os.path.exists(input_path):
-            log_text.value = f"❌ A pasta de entrada '{input_path}' não existe. Verifique o caminho."
+            log_text.value = f"❌ A pasta de entrada '{input_path}' não existe."
             log_text.visible = True
             page.update()
             return
@@ -157,68 +153,52 @@ def main(page: ft.Page):
             page.update()
             return
         
-        log_text.value = ""
         log_text.visible = False
         progress_bar.value = 0
         progress_bar.visible = True
         progress_text.visible = True
         page.update()
         
+        # Função para processar as imagens
         def process_images():
             for index, input_file in enumerate(images, start=1):
-                relative_path = os.path.relpath(input_file, input_path)
-                output_file = os.path.join(output_path, relative_path)
-                os.makedirs(os.path.dirname(output_file), exist_ok=True)
-                
                 filename = os.path.basename(input_file)
                 base_name = name_prefix.value.strip() if name_prefix.value.strip() else os.path.splitext(filename)[0]
-                new_name = sanitize_filename(f"{base_name}-{company_name.value.strip()}{('-' + str(index)) if numbering_toggle.value else ''}.{format_}")
-                output_file = os.path.join(os.path.dirname(output_file), new_name)
-                
+                base_name = sanitize_filename(base_name)
+
+                company = company_name.value.strip()
+                numbering = f"-{index}" if numbering_toggle.value else ""
+
+                # Formata o nome corretamente sem hífen desnecessário
+                if company:
+                    new_name = f"{base_name}-{company}{numbering}.{format_}"
+                else:
+                    new_name = f"{base_name}{numbering}.{format_}"
+
+                output_file = os.path.join(output_path, new_name)
+
                 compress_image(input_file, output_file, quality, format_, max_size)
-                
-                progress_percentage = (index / len(images)) * 100
-                progress_bar.value = progress_percentage / 100
-                progress_text.value = f"{int(progress_percentage)}%"
+
+                progress_bar.value = index / len(images)
+                progress_text.value = f"{int((index / len(images)) * 100)}%"
                 page.update()
-            
+
             progress_bar.visible = False
-            progress_text.visible = False
             success_text.value = f"✅ Compressão concluída! Arquivos salvos em: {output_path}"
             success_text.visible = True
             open_folder_button.visible = True
             page.update()
         
         threading.Thread(target=process_images).start()
-    def on_hover(e):
-        e.control.bgcolor = "blue" if e.data == "true" else "black"
-        e.control.update()
-    
-    def toggle_theme(e):
-        if page.theme_mode == ft.ThemeMode.LIGHT:
-            page.theme_mode = ft.ThemeMode.DARK
-            theme_button.text = "🌑"
-        else:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            theme_button.text = "☀️"
-        page.update()
 
-    # Button to toggle theme
-    theme_button = ft.ElevatedButton(
-        text="☀️  " if page.theme_mode == ft.ThemeMode.LIGHT else "🌑",
-        on_click=toggle_theme
-    )
-
-   
     page.add(
         ft.Text("💡 CompImage - Compressor de Imagens Offline", size=24, weight="bold"),
         ft.Row([input_folder, output_folder], spacing=20),
         ft.Row([name_prefix, company_name, max_size_dropdown, output_format, quality_level], spacing=20),
-        numbering_toggle,theme_button,
-        ft.Row([ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression, bgcolor="black", color="white", on_hover=on_hover)], alignment="center"),
-        
-        ft.Row([progress_bar], alignment="center"),
-        ft.Row([progress_text], alignment="center"),
+        numbering_toggle,
+        ft.ElevatedButton(text="🚀 INICIAR CONVERSÃO", on_click=start_compression),
+        progress_bar,
+        progress_text,
         success_text,
         open_folder_button,
         log_text
