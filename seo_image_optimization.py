@@ -72,15 +72,25 @@ def open_folder(e):
     webbrowser.open(f"file://{os.path.abspath(output_path)}")
 
 def compress_image(input_path, output_path, quality, format_, max_size):
-    """Redimensiona e comprime a imagem."""
+    """Redimensiona e comprime a imagem preservando transparência se necessário."""
     try:
         img = Image.open(input_path)
-        img = img.convert("RGB")
+
+        # Mantém transparência se houver (ex: PNG com fundo transparente)
+        if img.mode in ("RGBA", "LA"):
+            img = img.convert("RGBA")
+        else:
+            img = img.convert("RGB")
 
         if max_size is not None:
             img.thumbnail(max_size)  # Redimensiona mantendo proporção
-        
-        img.save(output_path, format_.upper(), quality=quality)
+
+        # Se o formato for WEBP, ative lossless para preservar a transparência
+        if format_.lower() == "webp":
+            img.save(output_path, format_.upper(), quality=quality, lossless=True)
+        else:
+            img.save(output_path, format_.upper(), quality=quality)
+
         return True
     except Exception as e:
         return str(e)
