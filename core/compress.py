@@ -13,7 +13,7 @@ def compress_image(input_path, output_path, quality, format_, max_size):
             img.thumbnail(max_size)
 
         if format_.lower() == "webp":
-            img.save(output_path, format_.upper(), quality=quality, lossless=True)
+            img.save(output_path, format_.upper(), quality=quality, lossless=False)
         else:
             img.save(output_path, format_.upper(), quality=quality)
 
